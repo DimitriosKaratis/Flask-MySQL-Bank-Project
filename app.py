@@ -20,8 +20,6 @@ def get_db_connection():
             password=os.environ.get('DB_PASSWORD', 'default_password'), 
             database=os.environ.get('DB_NAME', 'BankDB'),
             port=int(os.environ.get('DB_PORT', 3306)),
-            # ΠΡΟΣΘΗΚΗ: Απαραίτητο για το Aiven Cloud
-            ssl_disabled=False 
         )
         return connection
     except Error as e:
