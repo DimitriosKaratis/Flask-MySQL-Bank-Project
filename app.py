@@ -7,7 +7,6 @@ import os
 
 app = Flask(__name__)
 
-# Ασφαλής ανάκτηση του Secret Key από το Render
 app.secret_key = os.environ.get('SECRET_KEY', 'dev_key_12345')
 
 def get_db_connection():
@@ -19,7 +18,7 @@ def get_db_connection():
             password=os.environ.get('DB_PASSWORD'),
             database=os.environ.get('DB_NAME'),
             port=int(os.environ.get('DB_PORT', 16699)),
-            ssl_disabled=False  # Απαραίτητο για το Aiven
+            ssl_disabled=False  
         )
         return connection
     except Error as e:
@@ -48,7 +47,6 @@ def login():
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor(dictionary=True)
-            # Προστασία από SQL Injection με Prepared Statements
             cursor.execute("SELECT * FROM customer WHERE TIN = %s", (tin,))
             user = cursor.fetchone()
             cursor.close()
@@ -93,7 +91,7 @@ def dashboard():
         cursor.execute("SELECT LoanID, Type, Amount, ExpirationDate, Debt FROM loan_debts WHERE CustomerID = %s AND Debt > 0", (user_id,))
         loans = cursor.fetchall()
 
-        # 4. Recent Transactions (με διόρθωση Amount/2 για πληρωμές καρτών)
+        # 4. Recent Transactions 
         user_account_ids = [acc['AccountID'] for acc in accounts]
         if user_account_ids:
             format_strings = ','.join(['%s'] * len(user_account_ids))
