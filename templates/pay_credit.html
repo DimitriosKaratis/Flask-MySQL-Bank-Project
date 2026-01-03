@@ -7,7 +7,7 @@
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" onsubmit="document.getElementById('payCreditBtn').disabled=true;">
                     {% if credit_cards %}
                     <div class="mb-3">
                         <label for="source_account_id" class="form-label">Pay From Account</label>
@@ -44,7 +44,7 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg">Confirm Payment</button>
+                        <button type="submit" id="payCreditBtn" class="btn btn-success btn-lg">Confirm Payment</button>
                     </div>
                     {% else %}
                     <div class="alert alert-success">

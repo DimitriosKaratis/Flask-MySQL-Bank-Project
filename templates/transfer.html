@@ -7,7 +7,7 @@
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" onsubmit="document.getElementById('transferBtn').disabled=true;">
                     <h5 class="card-title mb-4">Transaction Details</h5>
 
                     <div class="mb-3">
@@ -39,7 +39,7 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-lg">Confirm Transfer</button>
+                        <button type="submit" id="transferBtn" class="btn btn-success btn-lg">Confirm Transfer</button>
                     </div>
                 </form>
             </div>
