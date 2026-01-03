@@ -120,10 +120,21 @@ def transfer():
             dest_number = request.form['dest_account_number']
             amount = float(request.form['amount'])
             
+            if amount <= 0:
+                flash('Amount must be positive.', 'warning')
+                return redirect(url_for('transfer'))
+
+            cursor.execute("SELECT Balance FROM accounts_balance WHERE AccountID = %s", (source_id,))
+            balance_row = cursor.fetchone()
+            if not balance_row or balance_row['Balance'] < amount:
+                 flash('Insufficient funds or invalid account.', 'danger')
+                 return redirect(url_for('transfer'))
 
             cursor.execute("SELECT AccountID FROM account WHERE AccountNumber = %s", (dest_number,))
             dest_row = cursor.fetchone()
-            if not dest_row: raise Exception("Destination account not found.")
+            if not dest_row: 
+                flash("Destination account not found.", 'danger')
+                return redirect(url_for('transfer'))
             
             cursor.execute("SELECT COALESCE(MAX(TransactionID), 0) FROM transaction")
             last_tid = cursor.fetchone()['COALESCE(MAX(TransactionID), 0)']
@@ -162,6 +173,26 @@ def pay_loan():
             source_id = request.form['source_account_id']
             amount = float(request.form['amount'])
 
+            if amount <= 0:
+                flash('Amount must be positive.', 'warning')
+                return redirect(url_for('pay_loan'))
+
+            cursor.execute("SELECT * FROM loan_debts WHERE CustomerID = %s AND Debt > 0", (session['user_id'],))
+            loan = cursor.fetchone()
+            if not loan:
+                flash('No active loan found.', 'danger')
+                return redirect(url_for('dashboard'))
+
+            if amount > loan['Debt']:
+                flash('Payment exceeds remaining debt.', 'warning')
+                return redirect(url_for('pay_loan'))
+
+            cursor.execute("SELECT Balance FROM accounts_balance WHERE AccountID = %s", (source_id,))
+            balance_row = cursor.fetchone()
+            if not balance_row or balance_row['Balance'] < amount:
+                flash('Insufficient funds.', 'danger')
+                return redirect(url_for('pay_loan'))
+
             cursor.execute("SELECT COALESCE(MAX(TransactionID), 0) FROM transaction")
             next_tid = cursor.fetchone()['COALESCE(MAX(TransactionID), 0)'] + 1
             cursor.execute("INSERT INTO transaction (TransactionID, Date, Time, Amount) VALUES (%s, %s, %s, %s)", (next_tid, datetime.datetime.now().date(), datetime.datetime.now().time(), -amount))
@@ -195,6 +226,16 @@ def pay_credit():
         cursor = conn.cursor(dictionary=True)
         try:
             source_id, card_id, amount = request.form['source_account_id'], request.form['card_id'], float(request.form['amount'])
+
+            if amount <= 0:
+                flash('Amount must be positive.', 'warning')
+                return redirect(url_for('pay_credit'))
+
+            cursor.execute("SELECT Balance FROM accounts_balance WHERE AccountID = %s", (source_id,))
+            balance_row = cursor.fetchone()
+            if not balance_row or balance_row['Balance'] < amount:
+                 flash('Insufficient funds.', 'danger')
+                 return redirect(url_for('pay_credit'))
 
             cursor.execute("SELECT COALESCE(MAX(TransactionID), 0) FROM transaction")
             last_tid = cursor.fetchone()['COALESCE(MAX(TransactionID), 0)']
