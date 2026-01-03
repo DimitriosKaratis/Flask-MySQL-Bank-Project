@@ -3,33 +3,31 @@ import mysql.connector
 from mysql.connector import Error
 import datetime
 import functools
-import os # Απαραίτητο για να διαβάζουμε τις μεταβλητές περιβάλλοντος
+import os 
 
 app = Flask(__name__)
 
-# ΑΣΦΑΛΕΙΑ: Παίρνει το κλειδί από το Cloud, αλλιώς χρησιμοποιεί ένα τυχαίο για τοπικά
+# Ασφαλής ανάκτηση του Secret Key από το Render
 app.secret_key = os.environ.get('SECRET_KEY', 'dev_key_12345')
 
-# Database Configuration (Πλήρως προστατευμένο για GitHub)
 def get_db_connection():
+    """Σύνδεση στη βάση δεδομένων χρησιμοποιώντας αποκλειστικά Environment Variables."""
     try:
-        # Διαβάζουμε τις τιμές απευθείας από το Render χωρίς τοπικά defaults
         connection = mysql.connector.connect(
             host=os.environ.get('DB_HOST'),
             user=os.environ.get('DB_USER'),
             password=os.environ.get('DB_PASSWORD'),
             database=os.environ.get('DB_NAME'),
-            port=int(os.environ.get('DB_PORT')),
-            ssl_disabled=False 
+            port=int(os.environ.get('DB_PORT', 16699)),
+            ssl_disabled=False  # Υποχρεωτικό για το SSL REQUIRED του Aiven
         )
         return connection
     except Error as e:
-        # Αυτό θα εκτυπωθεί στα Logs του Render αν αποτύχει η σύνδεση
         print(f"Detailed Connection Error: {e}")
         return None
 
 def login_required(view):
-    """Decorator to ensure user is logged in."""
+    """Decorator για την προστασία των σελίδων."""
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if 'user_id' not in session:
@@ -39,22 +37,18 @@ def login_required(view):
 
 @app.route('/')
 def home():
-    """Redirects to dashboard if logged in, else login."""
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles user login authentication via TIN."""
     if request.method == 'POST':
         tin = request.form['tin']
-        password = request.form['password'] # Not verified against DB as per plan (no password field)
-
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor(dictionary=True)
-            # SECURE: Using Prepared Statement to prevent SQL Injection
+            # Χρήση Prepared Statement για προστασία από SQL Injection
             cursor.execute("SELECT * FROM customer WHERE TIN = %s", (tin,))
             user = cursor.fetchone()
             cursor.close()
@@ -70,8 +64,61 @@ def login():
                 flash('Invalid TIN. Please try again.', 'danger')
         else:
             flash('Database connection failed.', 'danger')
-    
     return render_template('login.html')
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    user_id = session['user_id']
+    conn = get_db_connection()
+    
+    accounts, debit_cards, credit_cards, loans, recent_transactions = [], [], [], [], []
+    total_assets, total_liabilities = 0.0, 0.0
+    
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        # 1. Accounts & Balances
+        query_acc = """
+            SELECT ca.*, acc_table.Status, COALESCE(ab.Balance, 0) as Balance,
+            CASE WHEN sa.AccountID IS NOT NULL THEN 'Savings' WHEN cha.AccountID IS NOT NULL THEN 'Checking' ELSE 'General' END as AccountType
+            FROM customer_accounts ca
+            JOIN account acc_table ON ca.AccountID = acc_table.AccountID
+            LEFT JOIN accounts_balance ab ON ca.AccountID = ab.AccountID
+            LEFT JOIN savings_account sa ON ca.AccountID = sa.AccountID
+            LEFT JOIN checking_account cha ON ca.AccountID = cha.AccountID
+            WHERE ca.CustomerID = %s
+        """
+        cursor.execute(query_acc, (user_id,))
+        accounts = cursor.fetchall()
+        for acc in accounts: total_assets += float(acc['Balance'])
+
+        # 2. Debit Cards
+        cursor.execute("SELECT dc.CardID, c.CardNumber, c.CardholderName, c.ExpirationDate, c.CVV, a.AccountNumber FROM debit_card dc JOIN card c ON dc.CardID = c.CardID JOIN account a ON dc.AccountID = a.AccountID WHERE a.CustomerID = %s AND c.Status = 'Active'", (user_id,))
+        debit_cards = cursor.fetchall()
+
+        # 3. Credit Cards
+        cursor.execute("SELECT cc.CardID, c.CardNumber, c.CardholderName, c.ExpirationDate, c.CVV, cc.CreditLimit, ccb.AvailableBalance FROM credit_card cc JOIN card c ON cc.CardID = c.CardID LEFT JOIN credit_card_balance ccb ON cc.CardID = ccb.CardID WHERE cc.CustomerID = %s AND c.Status = 'Active'", (user_id,))
+        credit_cards = cursor.fetchall()
+
+        # 4. Active Loans
+        cursor.execute("SELECT LoanID, Type, Amount, ExpirationDate, Debt FROM loan_debts WHERE CustomerID = %s AND Debt > 0", (user_id,))
+        loans = cursor.fetchall()
+        for loan in loans: total_liabilities += float(loan['Debt'])
+
+        # 5. Recent Transactions με τη διόρθωση Amount/2
+        user_account_ids = [acc['AccountID'] for acc in accounts]
+        if user_account_ids:
+            format_strings = ','.join(['%s'] * len(user_account_ids))
+            query_trans = f"SELECT t.*, at.MovementType, a.AccountNumber FROM transaction t JOIN account_transaction at ON t.TransactionID = at.TransactionID JOIN account a ON at.AccountID = a.AccountID WHERE at.AccountID IN ({format_strings}) ORDER BY t.Date DESC, t.Time DESC LIMIT 10"
+            cursor.execute(query_trans, tuple(user_account_ids))
+            recent_transactions = cursor.fetchall()
+            for t in recent_transactions:
+                if t['MovementType'] == 'CC_Repayment': t['Amount'] = t['Amount'] / 2
+
+        cursor.close()
+        conn.close()
+
+    return render_template('dashboard.html', accounts=accounts, debit_cards=debit_cards, credit_cards=credit_cards, loans=loans, transactions=recent_transactions, net_worth=total_assets, user_name=session.get('user_name', 'User'))
 
 @app.route('/logout')
 def logout():
@@ -439,5 +486,6 @@ def settings():
         return render_template('settings.html', identity=identity, address=current_address, phones=phones, emails=emails)
 
 if __name__ == '__main__':
+    # Δυναμική πόρτα για το Render
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
