@@ -170,7 +170,6 @@
                 text-transform: uppercase;
             }
 
-            /* Small row below card using existing utilities but ensuring cleanup */
             .card-stats {
                 margin-top: 15px;
                 padding: 0 10px;
@@ -184,20 +183,16 @@
             </div>
             {% for card in debit_cards %}
             <div class="col-md-6 col-lg-4">
-                <!-- Physical Card Look -->
                 <div class="credit-card cc-debit">
-                    <!-- Top: Bank Name -->
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="cc-bank">{{ card.CardholderName }}</div>
                         <div class="text-uppercase fw-bold" style="opacity: 0.7;">Debit</div>
                     </div>
 
-                    <!-- Middle: Number -->
                     <div class="d-flex align-items-center justify-content-center flex-grow-1">
                         <div class="cc-number">{{ card.CardNumber }}</div>
                     </div>
 
-                    <!-- Bottom: Expiry & CVV -->
                     <div class="d-flex justify-content-between align-items-end mt-2">
                         <div>
                             <span class="cc-label">Valid Thru</span>
@@ -220,20 +215,16 @@
             </div>
             {% for card in credit_cards %}
             <div class="col-md-6 col-lg-4">
-                <!-- Physical Card Look -->
                 <div class="credit-card cc-credit">
-                    <!-- Top: Card Type -->
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="cc-bank">{{ card.CardholderName }}</div>
                         <div class="text-uppercase fw-bold" style="opacity: 0.7;">Credit</div>
                     </div>
 
-                    <!-- Middle: Number -->
                     <div class="d-flex align-items-center justify-content-center flex-grow-1">
                         <div class="cc-number">{{ card.CardNumber }}</div>
                     </div>
 
-                    <!-- Bottom: Expiry & CVV -->
                     <div class="d-flex justify-content-between align-items-end mt-2">
                         <div>
                             <span class="cc-label">Valid Thru</span>
@@ -246,7 +237,6 @@
                     </div>
                 </div>
 
-                <!-- Balance / Limit Below Card -->
                 <div class="card-stats d-flex justify-content-between align-items-center text-muted">
                     <small>Limit: <span class="fw-bold text-dark">{{ "%.0f"|format(card.CreditLimit) }}</span></small>
                     <small>Avail: <span class="fw-bold text-success">{{ "%.0f"|format(card.AvailableBalance)
