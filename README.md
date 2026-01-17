@@ -49,7 +49,7 @@ The system utilizes a remote **MySQL** instance designed in **Third Normal Form 
 #### **A. Available Test Accounts**
 You can use any of the following credentials (TIN) to explore the application. Any password will be accepted for demonstration purposes:
 
-| Customer Name | TIN (Username) | Account Number (Example) |
+| Customer Name | TIN (Username) | Account Number (One of many) |
 | :--- | :--- | :--- |
 | **Nikos Georgiou** | `987654321` | GR1034562345678901234567899 |
 | **Maria Papadopoulou** | `123456789` | GR1634441234567890123456789 |
