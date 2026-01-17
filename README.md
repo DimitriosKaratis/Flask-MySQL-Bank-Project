@@ -48,7 +48,7 @@ The system utilizes a remote **MySQL** instance designed in **Third Normal Form 
 
 #### **A. Login Credentials**
 To explore the application, you can use the following test account:
-* **Customer TIN:** `123456789` (User: Nikos Georgiou)
+* **Customer TIN:** `987654321` (User: Nikos Georgiou)
 * **Password:** Enter any password (The system currently validates identity via TIN for demonstration purposes).
 
 #### **B. Money Transfer**
