@@ -1,4 +1,4 @@
-# 🏦 BankDB: Banking Management System Cloud 
+# 🏦 BankDB: A Banking Management System (Cloud) 
 
 [![MySQL](https://img.shields.io/badge/Database-MySQL-blue.svg)](https://www.mysql.com/)
 [![Python](https://img.shields.io/badge/Backend-Python_Flask-lightgrey.svg)](https://flask.palletsprojects.com/)
@@ -19,7 +19,7 @@ The application is fully hosted and accessible online:
 ## 💻 User Interface & Features
 
 #### **Application Dashboard**
-![BankDB Dashboard](dashboard.png)
+![BankDB Dashboard](dashboard.jpg)
 
 * **Dashboard:** View real-time net worth and balances for all linked accounts (Savings, Checking, etc.) dynamically calculated via SQL Views.
 * **Secure Login:** Authenticate using a **Customer TIN** (Tax Identification Number).
@@ -46,15 +46,21 @@ The system utilizes a remote **MySQL** instance designed in **Third Normal Form 
 
 ## 📖 User Manual (Quick Start)
 
-#### **A. Login Credentials**
-To explore the application, you can use the following test account:
-* **Customer TIN:** `987654321` (User: Nikos Georgiou)
-* **Password:** Enter any password (The system currently validates identity via TIN for demonstration purposes).
+#### **A. Available Test Accounts**
+You can use any of the following credentials (TIN) to explore the application. Any password will be accepted for demonstration purposes:
+
+| Customer Name | TIN (Username) | Account Number (Example) |
+| :--- | :--- | :--- |
+| **Nikos Georgiou** | `987654321` | GR1034562345678901234567899 |
+| **Maria Papadopoulou** | `123456789` | GR1634441234567890123456789 |
+| **Elena Dimitriou** | `112233445` | GR1167895678901234567890121 |
+| **Kostas Vassilakis** | `223344556` | GR1478906789012345678901231 |
+| **Yiannis Papadakis** | `334455667` | GR1990128901234567890123453 |
 
 #### **B. Money Transfer**
 1. Navigate to the **Transfer** tab.
 2. Select your source account.
-3. Enter the recipient's Account Number and the desired amount.
+3. Enter a recipient's Account Number (e.g., from the table above) and the desired amount.
 4. The system validates the balance and updates both accounts simultaneously.
 
 #### **C. Managing Debt**
